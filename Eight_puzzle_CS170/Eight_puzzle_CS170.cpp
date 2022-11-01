@@ -2,12 +2,13 @@
 //
 
 #include <iostream>
-
+#include <string>
+#include <chrono>
 
 using namespace std;
+using namespace std::chrono;
 
-
-#pragma warning(disable : 4996)
+//#pragma warning(disable : 4996)
 
 
 int goalstate[9] = { 1,2,3,
@@ -17,7 +18,7 @@ int goalstate[9] = { 1,2,3,
 struct nodes                //i named the struct nodes so top will refer to nodes from example
 {
     int STATE[9];          //puzzle
-    char* str;              //solution tree  ex. udlrr = up down left right right
+    string str;              //solution tree  ex. udlrr = up down left right right
     int cost;               //calculated cost to solve
     bool valid;              //weather node is valid  
     int totalcost;          //totalcost to get to node ie. how many moves pathcost
@@ -43,22 +44,28 @@ int moves[4] = {-3,3,-1,1};                 //because puzzle is just a array mov
 
 int maxdepth = 32;           //sets how much depth will be searched if it takes more then 31 moves then it doesnt not have a solution
 nodes* top;
+nodes* awnser;
 
+auto start = high_resolution_clock::now();
 
 int main()
 {
+    int hist = 1;
     const int size = 9;
     int updog = 1;
     int visited = 0;
+    int queuecount = 0;
     //puzzle to solve
-    int puzzle[size] = {1,2,3,
-                        4,5,0,
-                        7,8,6};
+    int puzzle[size] = {1,3,6,
+                        5,0,2,
+                        4,7,8};
     top = newnode();
+    int awnser[size];
     for (int i = 0; i < size; i++) {
         top->STATE[i] = puzzle[i];
+        awnser[i] = puzzle[i];
     }
-    top->cost = Houristic(puzzle,2);
+    top->cost = Houristic(puzzle,hist);
 
     
     //cout << GOAL_TEST(puzzle);
@@ -66,7 +73,7 @@ int main()
         cout << "correct\n";
     }
 
-    int hist = 2;
+    
 
     print(top->STATE);
 
@@ -83,8 +90,39 @@ int main()
         }
         visited++;
         if (GOAL_TEST(node->STATE)) {
-            cout << "Solution found NEEDS TO ADD SOME OUTPUT STUFF HERE!!!";
-            cout << visited << "nodes visited";
+            cout << "Solution found!!!\n\n Puzzle:\n";
+            print(awnser);
+            int value;
+            for (int i = 0; i < (node->str).size(); i++) {
+                switch (node->str[i])
+                {
+                case 'u':value = 0;
+                    break;
+                case 'd':value = 1;
+                    break;
+                case 'l':value = 2;
+                    break;
+                case 'r':value = 3;
+                    break;
+                }
+
+
+                EXPAND(puzzle, awnser, value);
+                cout << "Move "  << node->str[i] << endl;
+                print(puzzle);
+                for (int i = 0; i < 9; i++) {
+                    awnser[i] = puzzle[i];
+                }
+            }
+            auto stop = high_resolution_clock::now();
+            auto duration = duration_cast<seconds>(stop - start);
+
+            cout << "Time taken by function: "
+                << duration.count() << " seconds" << endl;
+            cout << visited << " nodes expanded\n";
+            cout << node->totalcost << " Depth\n";
+            cout << queuecount << " max queue\n";
+            cout << "Solution " << node->str << endl;
             return 0;
         }
 
@@ -96,6 +134,7 @@ int main()
                 continue;
             }
             if (CHECKDOPE(addnode->STATE) == 0) {
+                queuecount++;
                 ADDTOFRONT(addnode, node, i, hist);
                 addnode = newnode();
             }
@@ -112,7 +151,7 @@ int main()
 
 
         cout << "value " << Houristic(top->STATE,2) << endl;
-
+        cout << "str" << node->str << endl;
 
 
 
@@ -145,11 +184,11 @@ nodes* newnode()
         return NULL; 
     }
     newnode->valid = 1;
-    newnode->str = new char[maxdepth + 1];
-    if (newnode->str == NULL) {
-        return NULL;
-    }
-    newnode->str[0] = 0;
+    newnode->str = "";
+    //if (newnode->str == NULL) {
+    //    return NULL;
+    //}
+    //newnode->str = EMPTY;
     newnode->cost = 0;
     newnode->totalcost = 0;
     newnode->next = NULL;
@@ -179,7 +218,7 @@ int Houristic(int* puzzle, int hour)    //holds the houristic takes in the puzzl
     int* solution = goalstate;
     switch (hour) {
     case 1: 
-        cout << "went here";
+        cost = 0;
         break;
     case 2: 
         
@@ -194,7 +233,9 @@ int Houristic(int* puzzle, int hour)    //holds the houristic takes in the puzzl
         break;
     
     case 3: 
+        
         cout << "went here";
+
         break;
     default: 
         cout << "Houristic error";
@@ -223,6 +264,9 @@ int EXPAND(int* newstate, int* expblock, int direct)
             moveblock = i;
             break;
         }
+    }
+    if (moveblock == 10) {
+        return -1;
     }
     for (i = 0; i < 2; i++) {
         if (moveblock == invaldexpand[i][direct]) {
@@ -262,11 +306,10 @@ void ADDTOFRONT(nodes* addnode, nodes* stack, int direct,int heur)
 
     top = addnode;
 
-    //strcpy_s(addnode->str,stack->totalcost, stack->str);
-    cout << "hello\n";
-    addnode->str[stack->totalcost] = direction[direct];
+    addnode->str = stack->str;
+    addnode->str += direction[direct];
 
-    addnode->str[stack->totalcost + 1] = 0;
+    //addnode->str[stack->totalcost + 1] = 0;
 
     addnode->totalcost = stack->totalcost + 1;
 
