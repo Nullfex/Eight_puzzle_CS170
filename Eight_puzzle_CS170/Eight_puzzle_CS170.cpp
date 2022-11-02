@@ -59,9 +59,9 @@ int main()
     int visited = 0;
     int queuecount = 0;
     //puzzle to solve
-    int puzzle[size] = {1,3,6,
-                        4,5,7,
-                       8,0,2};
+    int puzzle[size] = {1,2,3,
+                        0,5,6,
+                       4,7,8};
     top = newnode();
     int awnser[size];
     for (int i = 0; i < size; i++) {                                //sets top of stack to puzzle input
@@ -72,7 +72,7 @@ int main()
 
     
 
-   auto start = high_resolution_clock::now();                       //starts timer
+  
 
    // print(top->STATE);
 
@@ -81,7 +81,8 @@ int main()
     cout << "Uniform Cost: 1   Misplaced Tile:  2   Manhattan Distance: 3\n\n Choose Heuristic: ";
     cin >> hist;
     cout << "please wait\n";
-
+    
+    auto start = high_resolution_clock::now();                       //starts timer
     //loop
     while (updog == updog) {                                        //whats updog?
         
