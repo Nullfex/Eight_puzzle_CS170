@@ -6,9 +6,9 @@
 #include <chrono>
 
 using namespace std;
-using namespace std::chrono;
+using namespace std::chrono;        //needed for timer
 
-//#pragma warning(disable : 4996)
+
 
 
 int goalstate[9] = { 1,2,3,
@@ -27,65 +27,68 @@ struct nodes                //i named the struct nodes so top will refer to node
 
 bool GOAL_TEST(int* puzzle);        //checks if node is solution
 nodes* newnode();            //makes new node
-void print(int* puzzle);
-int Houristic(int* puzzle, int hour);
-int EMPTY(nodes* nodes);
-int EXPAND(int* nowstate, int* expblock, int direct);
-int CHECKDOPE(int STATE[]);
-void ADDTOFRONT(nodes* addnode, nodes* stack, int direct,int heur);
-nodes* QUEUE();
+void print(int* puzzle);     //prints puzzle
+int Houristic(int* puzzle, int hour);   //calulates houristic value
+int EMPTY(nodes* nodes);                //checks if there is no valid nodes left
+int EXPAND(int* nowstate, int* expblock, int direct);   //expands the node needs to take in all directions
+int CHECKDOPE(int STATE[]);                             //checks if the new node is a dupe
+void ADDTOFRONT(nodes* addnode, nodes* stack, int direct,int heur); //adds the new node to the top
+nodes* QUEUE();                                         //finds node with best houristic value
 
 char direction[] = {'u','d','l','r'};       //tells which direction to expand
 int invaldexpand[3][4] = { {0,6,0,2}, {1,7,3,5}, {2,8,6,8} }; //checks all 3 arrays for if they are invalid for direction[value]
 //        0, 1, 2,      only go up if 0 is not at invalidexpand[1-3][1]
 //        3, 4, 5,
 //        6, 7, 8
-int moves[4] = {-3,3,-1,1};                 //because puzzle is just a array moving up is -3 down +3 left -1 right 1
+int moves[4] = {-3,+3,-1,+1};                 //because puzzle is just a array moving up is -3 down +3 left -1 right 1
 
 int maxdepth = 32;           //sets how much depth will be searched if it takes more then 31 moves then it doesnt not have a solution
 nodes* top;
 nodes* awnser;
 
-auto start = high_resolution_clock::now();
+
+
+
+
 
 int main()
 {
-    int hist = 1;
+    int hist = 2;
     const int size = 9;
     int updog = 1;
     int visited = 0;
     int queuecount = 0;
     //puzzle to solve
     int puzzle[size] = {1,3,6,
-                        5,0,2,
-                        4,7,8};
+                        4,5,7,
+                       8,0,2};
     top = newnode();
     int awnser[size];
-    for (int i = 0; i < size; i++) {
+    for (int i = 0; i < size; i++) {                                //sets top of stack to puzzle input
         top->STATE[i] = puzzle[i];
         awnser[i] = puzzle[i];
     }
-    top->cost = Houristic(puzzle,hist);
-
-    
-    //cout << GOAL_TEST(puzzle);
-    if (GOAL_TEST(top->STATE)) {
-        cout << "correct\n";
-    }
+    top->cost = Houristic(puzzle,hist);                             //sets top of houristic value
 
     
 
-    print(top->STATE);
+   auto start = high_resolution_clock::now();                       //starts timer
 
-    nodes* addnode = newnode();
+   // print(top->STATE);
+
+    nodes* addnode = newnode();                                     //general node used to add to stack
+
+    cout << "Uniform Cost: 1   Misplaced Tile:  2   Manhattan Distance: 3\n\n Choose Heuristic: ";
+    cin >> hist;
+    cout << "please wait\n";
 
     //loop
-    while (updog == updog) {
+    while (updog == updog) {                                        //whats updog?
         
-       nodes* node = QUEUE();
+        nodes* node = QUEUE();                                      //gets best node from stack need to be on top ot avoid issues
 
         if (EMPTY(top)) {
-            cout << "Failer no solution";
+            cout << "Failer no solution";                           //all nodes are not valid nothing left to do no solution
             return 0;
         }
         visited++;
@@ -93,8 +96,8 @@ int main()
             cout << "Solution found!!!\n\n Puzzle:\n";
             print(awnser);
             int value;
-            for (int i = 0; i < (node->str).size(); i++) {
-                switch (node->str[i])
+            for (int i = 0; i < (node->str).size(); i++) {          //reexpands the starter puzzle to get solution output
+                switch (node->str[i])                               //based on what str char is get the value to the direction
                 {
                 case 'u':value = 0;
                     break;
@@ -107,51 +110,41 @@ int main()
                 }
 
 
-                EXPAND(puzzle, awnser, value);
-                cout << "Move "  << node->str[i] << endl;
-                print(puzzle);
-                for (int i = 0; i < 9; i++) {
+                EXPAND(puzzle, awnser, value);                      //expands the puzzle to next step
+                cout << "Move "  << node->str[i] << endl;           //tells what movewas
+                print(puzzle);                                      //prints new puzzle
+                for (int i = 0; i < 9; i++) {                       //copys puzzle to awnser
                     awnser[i] = puzzle[i];
                 }
             }
             auto stop = high_resolution_clock::now();
-            auto duration = duration_cast<seconds>(stop - start);
+            auto duration = duration_cast<seconds>(stop - start);        //timer stuff
 
-            cout << "Time taken by function: "
+            cout << "Time taken by function: "                          //outputs results
                 << duration.count() << " seconds" << endl;
             cout << visited << " nodes expanded\n";
             cout << node->totalcost << " Depth\n";
             cout << queuecount << " max queue\n";
-            cout << "Solution " << node->str << endl;
+            cout << "Solution " << node->str <<  "   u = up, d = down, l = left, r = right" << endl;
             return 0;
         }
 
-        print(node->STATE);
+       // print(node->STATE);
 
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {                                   //expand 4 times
             if (EXPAND(addnode->STATE, node->STATE, i) !=1) {
                 continue;
             }
-            if (CHECKDOPE(addnode->STATE) == 0) {
+            if (CHECKDOPE(addnode->STATE) == 0) {                       //if node is not a dupe add to stack
                 queuecount++;
                 ADDTOFRONT(addnode, node, i, hist);
                 addnode = newnode();
             }
         }
-
-         
-
-        
-
-
-
-
-
-
-
-        cout << "value " << Houristic(top->STATE,2) << endl;
-        cout << "str" << node->str << endl;
+    
+        //cout << "value " << Houristic(top->STATE,2) << endl;
+        //cout << "str" << node->str << endl;
 
 
 
@@ -214,17 +207,19 @@ void print(int* puzzle)
 
 int Houristic(int* puzzle, int hour)    //holds the houristic takes in the puzzle to test and hour to choose
 {
+    int xcost = 0;
+    int ycost = 0;
     int cost = 0;
     int* solution = goalstate;
-    switch (hour) {
+    switch (hour) {                     //case 1 = uniform case 2 = misplaced, case 3 = manhattan
     case 1: 
-        cost = 0;
+        cost = 0;                       //returns cost of 0 means only depth matters
         break;
     case 2: 
         
         
         for (int i = 0; i < 9; i++) {
-            if (((*(solution)) != (*(puzzle)))&&(*(puzzle)!=0)) {
+            if (((*(solution)) != (*(puzzle)))&&(*(puzzle)!=0)) {       //if the value of the puzzle isnt the solution means cost ++
                 cost++;
             }
                 solution++;
@@ -234,8 +229,15 @@ int Houristic(int* puzzle, int hour)    //holds the houristic takes in the puzzl
     
     case 3: 
         
-        cout << "went here";
+        for (int i = 0; i < 9; i++) {                               //calcs cost of each piece to move to right location
+         
 
+
+           // xcost += abs((i / 3) - (*(puzzle) / 3));
+           // ycost += abs((i % 3) - (*(puzzle) % 3));
+            puzzle++;
+        }
+        cost = xcost + ycost;
         break;
     default: 
         cout << "Houristic error";
@@ -245,9 +247,9 @@ int Houristic(int* puzzle, int hour)    //holds the houristic takes in the puzzl
     return cost;
 }
 
-int EMPTY(nodes* nodes)
+int EMPTY(nodes* nodes)                             
 {
-    if (nodes == NULL) {
+    if (nodes == NULL) {                            //if top of node is NULL its empty
         return 1;
     }
     else {
@@ -255,7 +257,7 @@ int EMPTY(nodes* nodes)
     }
 }
 
-int EXPAND(int* newstate, int* expblock, int direct)
+int EXPAND(int* newstate, int* expblock, int direct)            
 {
     int i;
     int moveblock = 10;
@@ -265,82 +267,77 @@ int EXPAND(int* newstate, int* expblock, int direct)
             break;
         }
     }
-    if (moveblock == 10) {
+    if (moveblock == 10) {          //didnt find it massive error
         return -1;
     }
-    for (i = 0; i < 2; i++) {
+    for (i = 0; i <= 2; i++) {
         if (moveblock == invaldexpand[i][direct]) {
             return -1;                              //cant expand 
         }
     }
 
-    for (i = 0; i < 9; i++) {
+    for (i = 0; i < 9; i++) {                       //copys node 
         newstate[i] = expblock[i];
     }
-    newstate[moveblock] = newstate[moveblock + moves[direct]];
-    newstate[moveblock + moves[direct]] = 0;
-    return 1;
+    newstate[moveblock] = newstate[moveblock + moves[direct]];  //moves new node piece to 0
+    newstate[moveblock + moves[direct]] = 0;                    //replaces piece orignal location with 0
+    return 1;  
 }
 
 int CHECKDOPE(int STATE[])
 {
-    nodes* start = top;
-    while (start != NULL) {
-        for (int i = 0; i < 9; i++) {
-            if (start->STATE[i] != STATE[i]) {
+    nodes* start = top;                                         //starst at top of stack
+    while (start != NULL) {                                     //untill end
+        for (int i = 0; i < 9; i++) {                           //
+            if (start->STATE[i] != STATE[i]) {                  //if state has any difference to a node end
                 break;
-            }if (i == 9) {
+            }if (i == 9) {                                      //if we checked all 9 spots then node is a dupe dont expand
                 return 1;
             }
         }
-        start = start->next;
+        start = start->next;                                    //next node
     }
     return 0;
 }
 
-void ADDTOFRONT(nodes* addnode, nodes* stack, int direct,int heur)
+void ADDTOFRONT(nodes* addnode, nodes* stack, int direct,int heur)  //adds to front of stack
 {
    
 
-    addnode->next = top;
+    addnode->next = top;                                //sets before top to next
 
-    top = addnode;
+    top = addnode;                                      //new top = addnode
 
-    addnode->str = stack->str;
-    addnode->str += direction[direct];
-
-    //addnode->str[stack->totalcost + 1] = 0;
-
-    addnode->totalcost = stack->totalcost + 1;
+    addnode->str = stack->str;                          //copys parent str
+    addnode->str += direction[direct];                  //adds new movement
 
 
-   /* addnode->totalcost = (stack->totalcost + 1);
-    
-    addnode->str[stack->totalcost] = direction[direct];
-    addnode->str[stack->totalcost + 1] = 0;*/
+    addnode->totalcost = stack->totalcost + 1;          //adds one cost for new depth
 
-    addnode->cost = addnode->totalcost + Houristic(addnode->STATE, heur);
+
+
+    addnode->cost = addnode->totalcost + Houristic(addnode->STATE, heur);   //adds cost of node
 }
 
 nodes* QUEUE()
 {
-    int currentlowest = 5000;
-    nodes* return_node = NULL;
+    int currentlowest = 5000;                   //if cost more than 5k its not happening
+    nodes* return_node = NULL;                  //node to return as best
     nodes* traversenode = top;
 
-    while (traversenode != NULL) {
-        if ((traversenode->valid == 1) && (traversenode->cost < currentlowest)) {
-            return_node = traversenode;
+    while (traversenode != NULL) {              //goes though stack
+        if ((traversenode->valid == 1) && (traversenode->cost < currentlowest)) {       
+            return_node = traversenode;                 //if lowest so far and valid new return
             currentlowest = traversenode->cost;
         }
-        traversenode = traversenode->next;
+        traversenode = traversenode->next;              //next on stack
     }
     
-    if (return_node != NULL) {
-        return_node->valid = 0;                         //been visted
+    if (return_node != NULL) {                          
+        return_node->valid = 0;                         //been expanded
     }
 
-    return return_node;
+    return return_node;                         //returns the node for test
 }
 
 
